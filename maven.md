@@ -1,0 +1,44 @@
+### 1.maven 将模块和依赖分别打到不同目录  
+```xml
+<plugin>
+    <artifactId>maven-jar-plugin</artifactId>
+    <version>3.0.2</version>
+    <configuration>
+        <!-- 指定打包的jar包输出路径-->
+        <outputDirectory>
+            ${user.dir}/../lib2
+            <!--${project.build.directory}/lib2-->
+        </outputDirectory>
+        <!--不打入jar包的文件类型或者路径-->
+        <!--<excludes>
+          <exclude>**/*.properties</exclude>
+          <exclude>**/*.xml</exclude>
+          <exclude>**/*.yml</exclude>
+          <exclude>static/**</exclude>
+          <exclude>templates/**</exclude>
+        </excludes>-->
+    </configuration>
+</plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <version>3.1.1</version>
+    <executions>
+        <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+                <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+                <!--<outputDirectory>${project.build.directory}/aa</outputDirectory>-->
+                <outputDirectory>${user.dir}/dependency</outputDirectory>
+                <overWriteReleases>false</overWriteReleases>
+                <overWriteSnapshots>false</overWriteSnapshots>
+                <overWriteIfNewer>true</overWriteIfNewer>
+                <excludeArtifactIds>junit,netty-all</excludeArtifactIds>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
