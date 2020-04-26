@@ -338,3 +338,290 @@ aa.properties,内容如下:
 username=${username}
 ```
 那么如果设置filtering为true,则maven会寻找 usernamae属性来替换${username}  
+
+### maven profiles  
+使用maven profiles可以实现项目高可移植性  
+可以为不同的环境配置不同的profile,在编译,打包项目时指定使用哪个profile  
+profile之一事项:  
+```
+1.一般出现在pom中最后一个元素
+2.profile必须有一个id元素
+3.profile可以包含pom中project下的任一元素
+```
+profile的一个简单例子,利用resources元素在不同的环境下为mysql提供不同的配置信息   
+假设在src/main/resources/aa.properties中配置了如下内容  
+```
+jdbc.url=${jdbc.url}
+jdbc.passwd=${jdbc.passwd}
+jdbc.username=${jdbc.username}
+```
+pom中配置了如下profile  
+```
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <jdbc.url>jdbc:mysql://localhost:3306/shgb_fz</jdbc.url>
+                <jdbc.passwd>123</jdbc.passwd>
+                <jdbc.username>test</jdbc.username>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>true</filtering>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>pro</id>
+            <properties>
+                <jdbc.url>jdbc:mysql://192.168.0.105:3306/shgb_fz</jdbc.url>
+                <jdbc.passwd>456</jdbc.passwd>
+                <jdbc.username>data</jdbc.username>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>true</filtering>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+```
+
+在打包命令行中添加-P参数,即可使用指定的profile内容  
+```
+mvn -Pdev clean package  #使用dev profile
+mvn -Ppro clean package  #使用pro profile
+```
+
+### maven profiles 的激活
+上面的介绍中我们采用mvn -P 来激活profile,还可以配置activaion元素来指定如何激活profile  
+1.当运行环境中某个property的value为指定值的时候  
+```
+        <profile>
+            <id>dev</id>
+            <activation>
+                <property>
+                    <name>jason.env</name>
+                    <value>dev</value>
+                </property>
+            </activation>
+            ...
+        </profiles>
+激活方式:
+mvn -Djason.env=dev clean package
+```  
+
+2.默认激活  
+```
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profiles>    
+```
+3.jdk 不举例   
+4.os 不举例  
+
+###  settings profile  
+之前配置的profiles都是在pom中配置的,只能当前项目使用,如果配置在settings.xml中,  
+则全部项目都能使用,有些公司的生产数据库存储了隐私数据,只有开发组长活运营人员  
+才能知道密码,这是运营人员可以将生产上数据库密码配置在settings.xml的profiles中  
+pom.xml
+```
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <jdbc.url>jdbc:mysql://localhost:3306/shgb_fz</jdbc.url>
+                <jdbc.passwd>123</jdbc.passwd>
+                <jdbc.username>test</jdbc.username>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>true</filtering>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>pro</id>
+            <properties>
+                <jdbc.url>jdbc:mysql://192.168.0.105:3306/shgb_fz</jdbc.url>
+                <jdbc.passwd>456</jdbc.passwd>
+            </properties>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>true</filtering>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+```
+settings.xml 
+```
+<profiels>
+   <profile>
+            <id>pro</id>
+            <properties>
+                <jdbc.username>data</jdbc.username>
+            </properties>
+        </profile>
+</profiles>
+```
+这样开发时不知道生产密码的,但是运营人员电脑配置了settings.xml ,mvn -Ppro clean package 时,  
+可以将密码写入properties文件  
+
+
+###  assembly ,允许用户个性化设置的插件  
+1.先介绍assembly plugin预定义的一些功能，先上个例子  
+```
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+                <executions>
+                    <execution>
+                        <id>jason</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+```
+我们将此插件绑定在了 package阶段，使用的是预定义descriptorRef是：<descriptorRef>jar-with-dependencies</descriptorRef>  
+该descriptorRef的作用是将项目的依赖解压，一并打到jar包内  
+另外两个常用的descriptorRef是：  
+>1.project:打包源代码，将当前项目中除了target,.idea,.svn等文件外的其他项目文件打到包里，打包好的代码可以直接在  
+ide里打开
+>2.src:打包源代码，功能与project 类似，但是只打包maven定义的src标准目录，不打包用于自定义在项目中的其他文件  
+
+2.自定义descriptor  
+pom部分    
+```
+<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+                <executions>
+                    <execution>
+                        <id>filter</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <filters>
+                        <!--定义了变量，回从这个文件找value去替换变量-->
+                        <filter>src/assembly/filter.properties</filter>
+                    </filters>
+                    <descriptors>
+                        <descriptor>src/assembly/filter.xml</descriptor>
+                    </descriptors>
+                </configuration>
+            </plugin>
+```
+filter.xml   
+```
+<assembly>
+    <id>filter</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>*.txt</include>
+            </includes>
+            <excludes>
+                <exclude>README.txt</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>README.txt</source>
+            <outputDirectory></outputDirectory>
+            <!--代表该文件需要使用过滤功能，文件里面有变量-->
+            <filtered>true</filtered>
+        </file>
+    </files>
+</assembly>
+```
+
+3.自定义descriptor的其他功能
+filter.xml
+```
+<assembly>
+    <id>filter</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <!--将源码以及依赖的jar生成mavenrepository的样式，可以用来部署使用-->
+    <repositories>
+        <repository>
+            <includeMetadata>false</includeMetadata>
+            <outputDirectory>maven2</outputDirectory>
+        </repository>
+    </repositories>
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>*.txt</include>
+            </includes>
+            <excludes>
+                <exclude>README.txt</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>README.txt</source>
+            <outputDirectory></outputDirectory>
+            <!--代表该文件需要使用过滤功能，文件里面有变量-->
+            <filtered>true</filtered>
+        </file>
+    </files>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>*:*</include>
+            </includes>
+            <excludes>
+                <exclude>org.seleniumhq.selenium:*</exclude>
+                <exclude>log4j:log4j</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
+
+</assembly>
+```
+
+
+### 自己搭建maven仓库,nexus
