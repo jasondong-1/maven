@@ -625,3 +625,87 @@ filter.xml
 
 
 ### 自己搭建maven仓库,nexus
+
+### 高可移植性之多模块  
+在profiles一节我们已经谈过高可移植性，最近遇到一个需求，一个多模块项目，父子关系最深有三层，  
+grandpa->parent->child,不同的平台所需要的模块不同，比如a平台只需要模块1、2、3，b平台需要模块  
+2,、3、4，所以打包时候需要打入不同的配置和jar包，最终的解决方案是再添加一个assembly模块，利用  
+assembly plugin + profiles 来解决
+```
+<...>
+    <groupId>com.ideal.sailer</groupId>
+    <artifactId>assembly</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+     <...>    
+    《profiles>...</profiles>
+<...>
+```
+
+###  本地依赖的改进  
+之前我们在maven中依赖本地依赖时介绍了如下方法：  
+```xml
+<dependency>
+            <groupId>org.apache.kudu</groupId>
+            <artifactId>kudu-spark2.3_2.11</artifactId>
+            <version>1.5.0-cdh5.13.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/kudu-spark2.3_2.11-1.5.0-cdh5.13.0.jar</systemPath>
+</dependency>
+```
+如果我们的项目只有一个模块用这种方法无可厚非，但是如果是多模块，如果在父pom定义了  
+```xml
+    
+    <dependencyManagement>
+        <dependencies>
+           <dependency>
+                       <groupId>org.apache.kudu</groupId>
+                       <artifactId>kudu-spark2.3_2.11</artifactId>
+                       <version>1.5.0-cdh5.13.0</version>
+                       <scope>system</scope>
+                       <systemPath>${project.basedir}/libs/kudu-spark2.3_2.11-1.5.0-cdh5.13.0.jar</systemPath>
+           </dependency>
+        </dependencies>
+    </dependencyManagement>
+```
+在子模块中引用时，必须重新指定systemPath，还会有如下警告：  
+```
+xxx:jar should not point at files within the project directory,...
+```
+
+新的解决方案如下,按照正常方式指定依赖，在clean阶段将本地jar install到本地,  
+这样子模块就可以正常依赖：    
+```xml
+...
+<dependency>
+                       <groupId>org.apache.kudu</groupId>
+                       <artifactId>kudu-spark2.3_2.11</artifactId>
+                       <version>1.5.0-cdh5.13.0</version>
+</dependency>
+...
+<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>2.5.2</version>
+                <executions>
+                    <execution>
+                        <id>install-kudu-spark</id>
+                        <phase>clean</phase>
+                        <configuration>
+                            <file>${project.basedir}/../../libs/kudu-spark2.3_2.11-1.5.0-cdh5.13.0.jar</file>
+                            <repositoryLayout>default</repositoryLayout>
+                            <groupId>org.apache.kudu</groupId>
+                            <artifactId>kudu-spark2.3_2.11</artifactId>
+                            <version>${kudu-spark.version}</version>
+                            <packaging>jar</packaging>
+                            <generatePom>true</generatePom>
+                        </configuration>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+...
+```  
+
