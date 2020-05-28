@@ -1,3 +1,33 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [maven 将模块和依赖分别打到不同目录](#maven-%E5%B0%86%E6%A8%A1%E5%9D%97%E5%92%8C%E4%BE%9D%E8%B5%96%E5%88%86%E5%88%AB%E6%89%93%E5%88%B0%E4%B8%8D%E5%90%8C%E7%9B%AE%E5%BD%95)
+- [maven dependency 顺序的影响](#maven-dependency-%E9%A1%BA%E5%BA%8F%E7%9A%84%E5%BD%B1%E5%93%8D)
+- [向maven中添加本地依赖  支持mvn clean package](#%E5%90%91maven%E4%B8%AD%E6%B7%BB%E5%8A%A0%E6%9C%AC%E5%9C%B0%E4%BE%9D%E8%B5%96--%E6%94%AF%E6%8C%81mvn-clean-package)
+- [maven help 插件](#maven-help-%E6%8F%92%E4%BB%B6)
+- [mvn 运行程序](#mvn-%E8%BF%90%E8%A1%8C%E7%A8%8B%E5%BA%8F)
+- [浏览项目的依赖](#%E6%B5%8F%E8%A7%88%E9%A1%B9%E7%9B%AE%E7%9A%84%E4%BE%9D%E8%B5%96)
+- [mvn 忽略测试失败](#mvn-%E5%BF%BD%E7%95%A5%E6%B5%8B%E8%AF%95%E5%A4%B1%E8%B4%A5)
+- [跳过单元测试](#%E8%B7%B3%E8%BF%87%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95)
+- [mvn 离线多线程](#mvn-%E7%A6%BB%E7%BA%BF%E5%A4%9A%E7%BA%BF%E7%A8%8B)
+- [mvn scope](#mvn-scope)
+- [分析依赖](#%E5%88%86%E6%9E%90%E4%BE%9D%E8%B5%96)
+- [pom可以引用的变量](#pom%E5%8F%AF%E4%BB%A5%E5%BC%95%E7%94%A8%E7%9A%84%E5%8F%98%E9%87%8F)
+- [依赖版本界限](#%E4%BE%9D%E8%B5%96%E7%89%88%E6%9C%AC%E7%95%8C%E9%99%90)
+- [将一组公用的依赖放到一个pom中](#%E5%B0%86%E4%B8%80%E7%BB%84%E5%85%AC%E7%94%A8%E7%9A%84%E4%BE%9D%E8%B5%96%E6%94%BE%E5%88%B0%E4%B8%80%E4%B8%AApom%E4%B8%AD)
+- [多模块vs继承](#%E5%A4%9A%E6%A8%A1%E5%9D%97vs%E7%BB%A7%E6%89%BF)
+- [maven resource](#maven-resource)
+- [maven profiles](#maven-profiles)
+- [maven profiles 的激活](#maven-profiles-%E7%9A%84%E6%BF%80%E6%B4%BB)
+- [settings profile](#settings-profile)
+- [assembly ,允许用户个性化设置的插件](#assembly-%E5%85%81%E8%AE%B8%E7%94%A8%E6%88%B7%E4%B8%AA%E6%80%A7%E5%8C%96%E8%AE%BE%E7%BD%AE%E7%9A%84%E6%8F%92%E4%BB%B6)
+- [自己搭建maven仓库,nexus](#%E8%87%AA%E5%B7%B1%E6%90%AD%E5%BB%BAmaven%E4%BB%93%E5%BA%93nexus)
+- [高可移植性之多模块](#%E9%AB%98%E5%8F%AF%E7%A7%BB%E6%A4%8D%E6%80%A7%E4%B9%8B%E5%A4%9A%E6%A8%A1%E5%9D%97)
+- [本地依赖的改进](#%E6%9C%AC%E5%9C%B0%E4%BE%9D%E8%B5%96%E7%9A%84%E6%94%B9%E8%BF%9B)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ### maven 将模块和依赖分别打到不同目录  
 ```xml
 <plugin>
